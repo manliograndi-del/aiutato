@@ -305,9 +305,9 @@ main section[id]{scroll-margin-top:6.5rem}
 .fin-btn button{background:transparent;color:var(--azzurro)}
 /* comandi */
 .ctrl{display:flex;align-items:center;gap:.75rem;margin-top:.75rem;flex-wrap:wrap}
-.via{position:absolute;top:.7rem;right:.7rem;z-index:5;font-size:.85rem;font-weight:700;padding:.35rem .8rem;border-radius:999px;background:var(--azzurro);color:#fff;pointer-events:none;animation:viaP 1.6s ease-in-out infinite}
-.via[hidden]{display:none}
-@keyframes viaP{50%{opacity:.55}}
+/* quando il browser non lascia partire la voce, il pulsante audio si accende per farsi notare */
+.ctrl .pp.chiama{background:var(--oro);border-color:var(--oro);color:var(--oro-ink);animation:chiama 1.6s ease-in-out infinite}
+@keyframes chiama{50%{box-shadow:0 0 0 6px rgba(227,162,26,.35)}}
 .ctrl .pp{font:inherit;font-weight:700;font-size:.9rem;min-width:7.5rem;padding:.45rem .9rem;border-radius:6px;border:2px solid var(--azzurro);background:transparent;color:var(--azzurro);cursor:pointer}
 .segs{display:flex;gap:4px;flex:1 1 14rem;min-width:0}
 .seg{flex:1;min-width:0;padding:10px 0;border:0;background:transparent;cursor:pointer}
@@ -359,7 +359,6 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
         <div class="st-tag" id="st-tag" aria-hidden="true"></div>
         <div class="scene" id="scene" aria-hidden="true"></div>
         <p class="cap" id="cap" aria-hidden="true"></p>
-        <div class="via" id="via" hidden>🔊 Tocca un punto qualsiasi per sentire la voce</div>
       </div>
       <div class="ctrl">
         <button type="button" class="pp" id="pp">Pausa</button>
@@ -843,18 +842,14 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
   var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(still){setAudio(false);load(S.length-1);finishScene();ended=true;setPlaying(false);pp.textContent='Guarda l’animazione';}
   else{
-    // parte da solo appena il brano è caricato; se il browser blocca il suono, l'animazione parte muta e la voce entra al primo tocco
+    // parte da sola appena il brano è caricato; se il browser blocca il suono, l'animazione va avanti muta e il pulsante «Metti audio» si accende
     load(0);setPlaying(false);
-    var via=document.getElementById('via'),started=false,userOff=false;
-    document.getElementById('snd').addEventListener('click',function(){userOff=!audioOn;via.hidden=true;});
-    function onTap(e){if(e.target.closest&&e.target.closest('#snd'))return;
-      document.removeEventListener('pointerdown',onTap,true);document.removeEventListener('keydown',onTap,true);
-      via.hidden=true;if(!audioOn&&!userOff)setAudio(true);}
+    var started=false,snd=document.getElementById('snd');
+    snd.addEventListener('click',function(){snd.classList.remove('chiama');});
     function start(){if(started)return;started=true;
       setAudio(true);load(0);
       var pr=trk.play();
-      if(pr&&pr.then)pr.then(function(){setPlaying(true);},function(){setAudio(false);setPlaying(true);
-        via.hidden=false;document.addEventListener('pointerdown',onTap,true);document.addEventListener('keydown',onTap,true);});
+      if(pr&&pr.then)pr.then(function(){setPlaying(true);},function(){setAudio(false);setPlaying(true);snd.classList.add('chiama');});
       else setPlaying(true);}
     if(trk.readyState>=4)start();else{trk.addEventListener('canplaythrough',start);trk.addEventListener('error',start);setTimeout(start,5000);}
   }
