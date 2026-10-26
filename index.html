@@ -592,7 +592,9 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
     if(on&&!AC){var C=window.AudioContext||window.webkitAudioContext;if(!C)return;AC=new C();master=AC.createGain();master.gain.value=.6;master.connect(AC.destination);
       noiseBuf=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);var d=noiseBuf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
     if(on&&AC&&AC.state==='suspended')AC.resume();
-    audioOn=on&&!!AC;var b=document.getElementById('snd');b.textContent=audioOn?'Audio: acceso':'Audio: spento';b.setAttribute('aria-pressed',audioOn?'true':'false');
+    audioOn=on&&!!AC;
+    if(audioOn){try{trk.currentTime=(SS[cur]+t)/1000;}catch(e){}if(playing){var pr=trk.play();if(pr&&pr.catch)pr.catch(function(){});}}else trk.pause();
+    var b=document.getElementById('snd');b.textContent=audioOn?'Audio: acceso':'Audio: spento';b.setAttribute('aria-pressed',audioOn?'true':'false');
   }
   document.getElementById('snd').addEventListener('click',function(){setAudio(!audioOn);});
   function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var x=a[i];a[i]=a[j];a[j]=x;}return a;}
@@ -680,8 +682,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
     var L=['Leggi le istruzioni di questo progetto.','Lavora solo su questa copia.','Zona: [un quartiere di Milano].','Trova i supermercati e i loro volantini.','Leggi le offerte, pagina per pagina.','Rifai la pagina e provala.','Spiegami cosa hai fatto, in parole semplici.'];
     show(doc,200);show(cnt,500);
     var tt=900;
-    L.forEach(function(x,i){var li=E('li','',null,ol);cue(tt,function(){num.textContent=i+1;});var end=typeInto(li,x,tt,36);
-      if(i===2)cue(end+20,function(){li.innerHTML='Zona: <span class="q">[un quartiere di Milano]</span>.';});tt=end+300;});
+    L.forEach(function(x,i){var li=E('li','',null,ol);cue(tt,function(){num.textContent=i+1;});var end=typeInto(li,x,tt,50);
+      if(i===2)cue(end+20,function(){li.innerHTML='Zona: <span class="q">[un quartiere di Milano]</span>.';});tt=end+180;});
     cue(tt+600,function(){A(doc,N?[{opacity:1,transform:'none'},{opacity:.12,transform:'scale(.9)'}]:[{transform:'none'},{transform:'translateX(-30%) scale(.7)'}],{duration:900});A(cnt,[{opacity:1},{opacity:0}],{duration:400});});
     if(!N){var ar=E('div','arrow','→');ar.style.left='45%';show(ar,tt+1300,{base:'translateY(-55%)',from:'translateX(-20px)'});}
     var w=E('div','ph-wrap',null,sc);w.style.cssText=N?'position:absolute;left:50%;top:50%':'position:absolute;right:4%;top:50%';
@@ -750,18 +752,26 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
    }}
   ];
 
-  function setCap(text,dur){
+  // tempi misurati sulla voce di Suno (audio/aiutato.mp3): inizio di ogni scena, inizio di ogni frase, fine della voce
+  var SS=[0,12300,29700,46200,61700,77900,97000,111900],END=142000,
+      VS=[400,12600,30000,46500,62000,78200,97300,112200],VEND=128300;
+  S.forEach(function(s,i){s.dur=(i<S.length-1?SS[i+1]:END)-SS[i];});
+  var trk=new Audio('audio/aiutato.mp3');trk.preload='auto';
+  function setCap(text,i){
     cap.textContent='';
     var ws=text.split(' '),sp=ws.map(function(w){var s=document.createElement('span');s.textContent=w+' ';cap.appendChild(s);return s;});
-    var start=300,end=Math.min(dur*.6,start+ws.length*320),prev=null;
-    sp.forEach(function(s,i){cue(start+(end-start)*i/ws.length,function(){if(prev)prev.classList.remove('now');s.classList.add('on','now');prev=s;});});
+    // le parole compaiono mentre la voce le dice: tempo proporzionale alla lunghezza di ogni parola
+    var start=VS[i]-SS[i],end=(i<S.length-1?VS[i+1]:VEND)-SS[i]-700,tot=0,acc=0,prev=null;
+    ws.forEach(function(w){tot+=w.length+1;});
+    sp.forEach(function(s,k){cue(start+(end-start)*acc/tot,function(){if(prev)prev.classList.remove('now');s.classList.add('on','now');prev=s;});acc+=ws[k].length+1;});
   }
-  function load(i){
+  function load(i,fromTrack){
+    if(!fromTrack&&audioOn){try{trk.currentTime=SS[i]/1000;}catch(e){}}
     stage.getAnimations({subtree:true}).forEach(function(a){a.cancel();});
     cur=i;t=0;ci=0;cues=[];ended=false;sc.textContent='';N=stage.clientWidth<560;
     var s=S[i];tag.innerHTML='<b></b><span></span>';tag.firstChild.textContent=s.tag.toUpperCase();tag.lastChild.textContent=s.sub;
     A(tag,[{opacity:0,transform:'translateX(-10px)'},{opacity:1,transform:'none'}],{duration:500});
-    sfx('scene');s.build();setCap(s.cap,s.dur);
+    sfx('scene');s.build();setCap(s.cap,i);
     cues.sort(function(a,b){return a.ms-b.ms;});
     if(!playing)stage.getAnimations({subtree:true}).forEach(function(a){if(a.playState==='running')a.pause();});
   }
@@ -772,6 +782,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
   }
   function setPlaying(p){
     playing=p;
+    if(audioOn){if(p){var pr=trk.play();if(pr&&pr.catch)pr.catch(function(){});}else trk.pause();}
     pp.textContent=p?'Pausa':(ended?'Rivedi':'Riproduci');
     stage.getAnimations({subtree:true}).forEach(function(a){if(p&&a.playState==='paused')a.play();if(!p&&a.playState==='running')a.pause();});
   }
@@ -779,9 +790,18 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
   function frame(now){
     var dt=Math.min(now-last,100);last=now;
     if(playing){
-      t+=dt;
-      while(ci<cues.length&&cues[ci].ms<=t)cues[ci++].fn();
-      if(t>=S[cur].dur){if(cur<S.length-1)load(cur+1);else{t=S[cur].dur;ended=true;setPlaying(false);}}
+      if(audioOn&&!trk.paused&&trk.readyState>=2){
+        // la voce comanda: scena e tempo seguono il brano
+        var G=trk.currentTime*1000,k=0;while(k<S.length-1&&SS[k+1]<=G)k++;
+        if(k!==cur)load(k,true);
+        t=Math.max(0,G-SS[cur]);
+        while(ci<cues.length&&cues[ci].ms<=t)cues[ci++].fn();
+        if(trk.ended||G>=END-50){t=S[cur].dur;ended=true;setPlaying(false);}
+      }else{
+        t+=dt;
+        while(ci<cues.length&&cues[ci].ms<=t)cues[ci++].fn();
+        if(t>=S[cur].dur){if(cur<S.length-1)load(cur+1);else{t=S[cur].dur;ended=true;setPlaying(false);}}
+      }
     }
     drawSegs();requestAnimationFrame(frame);
   }
