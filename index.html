@@ -300,10 +300,9 @@ nav a:hover{color:var(--ink);text-decoration:underline}
 .fin-btn button{background:transparent;color:var(--azzurro)}
 /* comandi */
 .ctrl{display:flex;align-items:center;gap:.75rem;margin-top:.75rem;flex-wrap:wrap}
-.via{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;background:rgba(250,248,243,.72);backdrop-filter:blur(3px)}
+.via{position:absolute;top:.7rem;right:.7rem;z-index:5;font-size:.85rem;font-weight:700;padding:.35rem .8rem;border-radius:999px;background:var(--azzurro);color:#fff;pointer-events:none;animation:viaP 1.6s ease-in-out infinite}
 .via[hidden]{display:none}
-.via button{font:inherit;font-weight:700;font-size:1.15rem;padding:.8rem 1.6rem;border-radius:999px;border:0;background:var(--azzurro);color:#fff;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.15)}
-.via .via-muto{font-size:.9rem;font-weight:600;padding:.3rem .6rem;background:transparent;color:var(--azzurro);box-shadow:none;text-decoration:underline}
+@keyframes viaP{50%{opacity:.55}}
 .ctrl .pp{font:inherit;font-weight:700;font-size:.9rem;min-width:7.5rem;padding:.45rem .9rem;border-radius:6px;border:2px solid var(--azzurro);background:transparent;color:var(--azzurro);cursor:pointer}
 .segs{display:flex;gap:4px;flex:1 1 14rem;min-width:0}
 .seg{flex:1;min-width:0;padding:10px 0;border:0;background:transparent;cursor:pointer}
@@ -349,7 +348,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
         <div class="st-tag" id="st-tag" aria-hidden="true"></div>
         <div class="scene" id="scene" aria-hidden="true"></div>
         <p class="cap" id="cap" aria-hidden="true"></p>
-        <div class="via" id="via"><button type="button" id="via-on">▶&nbsp; Guarda con la voce</button><button type="button" id="via-off" class="via-muto">oppure guarda senza audio</button></div>
+        <div class="via" id="via" hidden>🔊 Tocca un punto qualsiasi per sentire la voce</div>
       </div>
       <div class="ctrl">
         <button type="button" class="pp" id="pp">Pausa</button>
@@ -760,7 +759,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
   ];
 
   // tempi misurati sulla voce di Suno (audio/aiutato.mp3): inizio di ogni scena, inizio di ogni frase, fine della voce
-  var VS=[1100,8100,19900,30500,41200,52700,67500,83500],VEND=96500,END=106000,
+  var VS=[1000,8200,19200,28300,37100,48700,59400,67900],VEND=96500,END=106000,
       SS=VS.map(function(v,i){return i?v-300:0;});
   S.forEach(function(s,i){s.d0=s.dur;s.dur=(i<S.length-1?SS[i+1]:END)-SS[i];});
   var trk=new Audio('audio/aiutato.mp3'),trkErr=false;trk.preload='auto';
@@ -822,20 +821,28 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
     b.addEventListener('click',function(){load(j);setPlaying(true);});
     var li=document.createElement('li');li.textContent=s.cap;document.getElementById('trascr').appendChild(li);
   });
-  pp.addEventListener('click',function(){autoPaused=false;var v=document.getElementById('via');if(!v.hidden){v.hidden=true;setAudio(true);load(0);setPlaying(true);}else if(ended){load(0);setPlaying(true);}else setPlaying(!playing);});
+  pp.addEventListener('click',function(){autoPaused=false;if(ended){load(0);setPlaying(true);}else setPlaying(!playing);});
   document.addEventListener('visibilitychange',function(){if(document.hidden&&playing){autoPaused=true;setPlaying(false);}else if(!document.hidden&&autoPaused){autoPaused=false;setPlaying(true);}});
   if('IntersectionObserver' in window){new IntersectionObserver(function(es){es.forEach(function(e){
     if(!e.isIntersecting&&playing){autoPaused=true;setPlaying(false);}else if(e.isIntersecting&&autoPaused){autoPaused=false;setPlaying(true);}});},{threshold:.25}).observe(stage);}
 
   var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(still){document.getElementById('via').hidden=true;setAudio(false);load(S.length-1);finishScene();ended=true;setPlaying(false);pp.textContent='Guarda l’animazione';}
+  if(still){setAudio(false);load(S.length-1);finishScene();ended=true;setPlaying(false);pp.textContent='Guarda l’animazione';}
   else{
-    // i browser non lasciano partire un suono senza un tocco: un solo tocco fa partire voce e animazione insieme
+    // parte da solo appena il brano è caricato; se il browser blocca il suono, l'animazione parte muta e la voce entra al primo tocco
     load(0);setPlaying(false);
-    var via=document.getElementById('via');
-    function go(on){via.hidden=true;if(on)setAudio(true);else setAudio(false);load(0);setPlaying(true);}
-    document.getElementById('via-on').addEventListener('click',function(){go(true);});
-    document.getElementById('via-off').addEventListener('click',function(){go(false);});
+    var via=document.getElementById('via'),started=false,userOff=false;
+    document.getElementById('snd').addEventListener('click',function(){userOff=!audioOn;via.hidden=true;});
+    function onTap(e){if(e.target.closest&&e.target.closest('#snd'))return;
+      document.removeEventListener('pointerdown',onTap,true);document.removeEventListener('keydown',onTap,true);
+      via.hidden=true;if(!audioOn&&!userOff)setAudio(true);}
+    function start(){if(started)return;started=true;
+      setAudio(true);load(0);
+      var pr=trk.play();
+      if(pr&&pr.then)pr.then(function(){setPlaying(true);},function(){setAudio(false);setPlaying(true);
+        via.hidden=false;document.addEventListener('pointerdown',onTap,true);document.addEventListener('keydown',onTap,true);});
+      else setPlaying(true);}
+    if(trk.readyState>=4)start();else{trk.addEventListener('canplaythrough',start);trk.addEventListener('error',start);setTimeout(start,5000);}
   }
   requestAnimationFrame(frame);
 })();
