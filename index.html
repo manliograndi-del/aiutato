@@ -306,9 +306,14 @@ main section[id]{scroll-margin-top:6.5rem}
 /* comandi */
 .ctrl{display:flex;align-items:center;gap:.75rem;margin-top:.75rem;flex-wrap:wrap}
 /* quando il browser non lascia partire la voce, il pulsante audio si accende per farsi notare */
-.ctrl .pp.chiama{background:var(--oro);border-color:var(--oro);color:var(--oro-ink);animation:chiama 1.6s ease-in-out infinite}
+.stage-box{position:relative}
+/* pulsanti dentro l'animazione, in alto a destra: prima Audio/Muto, poi Pausa */
+.st-btns{position:absolute;top:10px;right:10px;z-index:6;display:flex;gap:6px}
+.pill{font:inherit;font-weight:700;font-size:.8rem;line-height:1;padding:.45rem .85rem;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--azzurro);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.pill:hover{border-color:var(--azzurro)}
+.pill.chiama{background:var(--oro);border-color:var(--oro);color:var(--oro-ink);animation:chiama 1.6s ease-in-out infinite}
 @keyframes chiama{50%{box-shadow:0 0 0 6px rgba(227,162,26,.35)}}
-.ctrl .pp{font:inherit;font-weight:700;font-size:.9rem;min-width:7.5rem;padding:.45rem .9rem;border-radius:6px;border:2px solid var(--azzurro);background:transparent;color:var(--azzurro);cursor:pointer}
+@media (max-width:640px){.st-btns{top:8px;right:8px;gap:4px}.pill{font-size:.72rem;padding:.38rem .7rem}}
 .segs{display:flex;gap:4px;flex:1 1 14rem;min-width:0}
 .seg{flex:1;min-width:0;padding:10px 0;border:0;background:transparent;cursor:pointer}
 .seg i{display:block;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
@@ -355,14 +360,18 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
 <main id="top">
   <section class="film" aria-label="Animazione: che cosa vuole fare AIutaTO">
     <div class="wrap">
+      <div class="stage-box">
       <div class="stage" id="stage">
         <div class="st-tag" id="st-tag" aria-hidden="true"></div>
         <div class="scene" id="scene" aria-hidden="true"></div>
         <p class="cap" id="cap" aria-hidden="true"></p>
       </div>
+      <div class="st-btns">
+        <button type="button" class="pill" id="snd" aria-pressed="false">Audio</button>
+        <button type="button" class="pill" id="pp">Pausa</button>
+      </div>
+      </div>
       <div class="ctrl">
-        <button type="button" class="pp" id="pp">Pausa</button>
-        <button type="button" class="pp" id="snd" aria-pressed="true">Togli audio</button>
         <div class="segs" id="segs"></div>
         <a class="salta" href="#scopi">Vai al sito ↓</a>
       </div>
@@ -610,7 +619,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
     if(on&&AC&&AC.state==='suspended')AC.resume();
     audioOn=on&&!!AC;
     if(audioOn){try{trk.currentTime=(SS[cur]+t)/1000;}catch(e){}if(playing){var pr=trk.play();if(pr&&pr.catch)pr.catch(function(){});}}else trk.pause();
-    var b=document.getElementById('snd');b.textContent=audioOn?'Togli audio':'Metti audio';b.setAttribute('aria-pressed',audioOn?'true':'false');
+    var b=document.getElementById('snd');b.textContent=audioOn?'Muto':'Audio';b.setAttribute('aria-pressed',audioOn?'true':'false');
   }
   document.getElementById('snd').addEventListener('click',function(){setAudio(!audioOn);});
   function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var x=a[i];a[i]=a[j];a[j]=x;}return a;}
