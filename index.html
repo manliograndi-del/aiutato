@@ -68,14 +68,19 @@ section{padding-block:clamp(3rem,6vw,5rem);border-top:1px solid var(--line)}
 
 /* Barra */
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
-header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
-.bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-block:.7rem;flex-wrap:wrap}
+header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface)}
+.bar>.wrap{display:flex;align-items:center;gap:1rem;padding-block:.6rem}
 .logo{font-family:var(--f-display);font-weight:800;font-size:1.35rem;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:.15rem}
 .logo .ai{color:var(--azzurro)}
 .targa{display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:.78em;background:var(--oro);color:var(--oro-ink);border-radius:4px;padding:.05em .3em;margin-left:.1em;letter-spacing:.02em}
-nav ul{display:flex;flex-wrap:wrap;gap:.25rem 1.1rem;list-style:none;margin:0;padding:0;font-size:.95rem}
-nav a{color:var(--muted);text-decoration:none}
-nav a:hover{color:var(--ink);text-decoration:underline}
+/* Striscia del menù: una sola riga sotto il logo; sul telefono scorre di lato. La sezione in cui si trova la pagina si accende in oro. */
+.strip{background:#1F4FA3;color:#fff}
+.strip ul{display:flex;flex-wrap:nowrap;gap:.3rem;list-style:none;margin:0;padding:.4rem 0;font-size:.95rem;overflow-x:auto;scrollbar-width:none;white-space:nowrap}
+.strip ul::-webkit-scrollbar{display:none}
+.strip a{display:block;color:#fff;text-decoration:none;padding:.3rem .8rem;border-radius:999px;opacity:.88;transition:background .25s,color .25s,opacity .25s}
+.strip a:hover{opacity:1;background:rgba(255,255,255,.14)}
+.strip a.on{background:var(--oro);color:var(--oro-ink);opacity:1;font-weight:700}
+main section[id]{scroll-margin-top:6.5rem}
 
 /* Apertura */
 .hero{padding-block:clamp(3rem,8vw,6rem) clamp(2.5rem,6vw,4.5rem);border-top:0}
@@ -316,10 +321,14 @@ nav a:hover{color:var(--ink);text-decoration:underline}
 footer{border-top:1px solid var(--line);padding-block:2rem;color:var(--muted);font-size:.9rem}
 footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
 
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .strip{background:#1B2A4A}}
+:root[data-theme="dark"] .strip{background:#1B2A4A}
+
 @media (max-width:760px){
   .hero-grid,.fini,.progetti,.principi,.modi,.scala,.licenza,.contatti{grid-template-columns:minmax(0,1fr)}
   .hero-grid{gap:2rem}
-  nav ul{font-size:.9rem;gap:.2rem .9rem}
+  .strip ul{font-size:.9rem}
+  .strip a{padding:.3rem .65rem}
 }
 </style>
 </head>
@@ -328,7 +337,9 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
 <header class="bar">
   <div class="wrap">
     <a class="logo" href="#top" aria-label="AIutaTO, inizio pagina"><span class="ai">AI</span>uta<span class="targa">TO</span></a>
-    <nav aria-label="Sezioni">
+  </div>
+  <nav class="strip" aria-label="Sezioni">
+    <div class="wrap">
       <ul>
         <li><a href="#scopi">Scopi</a></li>
         <li><a href="#progetti">Progetti</a></li>
@@ -337,8 +348,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
         <li><a href="#istituzioni">Istituzioni</a></li>
         <li><a href="#contatti">Contatti</a></li>
       </ul>
-    </nav>
-  </div>
+    </div>
+  </nav>
 </header>
 
 <main id="top">
@@ -848,6 +859,20 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
     if(trk.readyState>=4)start();else{trk.addEventListener('canplaythrough',start);trk.addEventListener('error',start);setTimeout(start,5000);}
   }
   requestAnimationFrame(frame);
+})();
+
+// menù: si accende la sezione che si sta leggendo
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.strip a')),secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
+  function spy(){
+    var y=window.innerHeight*.35,k=-1;
+    secs.forEach(function(s,i){if(s&&s.getBoundingClientRect().top<=y)k=i;});
+    if(k>=0&&secs[k].getBoundingClientRect().bottom<0)k=-1;
+    links.forEach(function(a,i){var on=i===k;if(on!==a.classList.contains('on')){a.classList.toggle('on',on);
+      if(on){a.setAttribute('aria-current','true');var u=a.closest('ul');u.scrollTo({left:a.offsetLeft-u.clientWidth/2+a.offsetWidth/2,behavior:'smooth'});}else a.removeAttribute('aria-current');}});
+  }
+  var q=false;window.addEventListener('scroll',function(){if(!q){q=true;requestAnimationFrame(function(){q=false;spy();});}},{passive:true});
+  window.addEventListener('resize',spy);spy();
 })();
 
 document.getElementById('copia').addEventListener('click', function(){
