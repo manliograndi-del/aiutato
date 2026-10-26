@@ -315,6 +315,12 @@ main section[id]{scroll-margin-top:6.5rem}
 .pill:hover{border-color:var(--azzurro)}
 .pill.chiama{background:var(--oro);border-color:var(--oro);color:var(--oro-ink);animation:chiama 1.6s ease-in-out infinite}
 @keyframes chiama{50%{box-shadow:0 0 0 6px rgba(227,162,26,.35)}}
+/* invito ad accendere la voce, quando il browser la blocca: grande, in alto al centro, semitrasparente */
+.invito{position:absolute;left:50%;top:22%;white-space:nowrap;transform:translate(-50%,-50%);z-index:7;display:inline-flex;align-items:center;gap:.55em;font:inherit;font-weight:800;font-size:clamp(1rem,2.4vw,1.5rem);padding:.75em 1.5em;border-radius:999px;border:2px solid rgba(255,255,255,.7);background:rgba(31,79,163,.72);color:#fff;cursor:pointer;backdrop-filter:blur(4px);box-shadow:0 8px 30px rgba(31,79,163,.3);animation:invito 2s ease-in-out infinite}
+.invito[hidden]{display:none}
+.invito:hover{background:rgba(31,79,163,.88)}
+.invito svg{width:1.3em;height:1.3em}
+@keyframes invito{50%{box-shadow:0 0 0 12px rgba(31,79,163,.14),0 8px 30px rgba(31,79,163,.3)}}
 @media (max-width:640px){.st-btns{top:8px;right:8px;gap:4px}.pill{font-size:.72rem;padding:.38rem .7rem}}
 .segs{display:flex;gap:4px;flex:1 1 14rem;min-width:0}
 .seg{flex:1;min-width:0;padding:10px 0;border:0;background:transparent;cursor:pointer}
@@ -368,6 +374,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
         <div class="scene" id="scene" aria-hidden="true"></div>
         <p class="cap" id="cap" aria-hidden="true"></p>
       </div>
+      <button type="button" class="invito" id="invito" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>Ascolta con la voce</button>
       <div class="st-btns">
         <button type="button" class="pill" id="snd" aria-pressed="false">Audio</button>
         <button type="button" class="pill" id="pp">Pausa</button>
@@ -857,11 +864,19 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
     // parte da sola appena il brano è caricato; se il browser blocca il suono, l'animazione va avanti muta e il pulsante «Metti audio» si accende
     load(0);setPlaying(false);
     var started=false,snd=document.getElementById('snd');
-    snd.addEventListener('click',function(){snd.classList.remove('chiama');});
+    var inv=document.getElementById('invito');
+    // il pulsante grande «vola» al posto del pulsante Audio e sparisce
+    function via(){if(inv.hidden)return;var a=inv.getBoundingClientRect(),b=snd.getBoundingClientRect();
+      var dx=(b.left+b.width/2)-(a.left+a.width/2),dy=(b.top+b.height/2)-(a.top+a.height/2);
+      inv.style.animation='none';
+      var an=inv.animate([{transform:'translate(-50%,-50%)',opacity:1},{transform:'translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px)) scale(.3)',opacity:0}],{duration:500,easing:'cubic-bezier(.5,0,.3,1)'});
+      an.onfinish=function(){inv.hidden=true;};}
+    inv.addEventListener('click',function(){if(!audioOn)setAudio(true);via();});
+    snd.addEventListener('click',via);
     function start(){if(started)return;started=true;
       setAudio(true);load(0);
       var pr=trk.play();
-      if(pr&&pr.then)pr.then(function(){setPlaying(true);},function(){setAudio(false);setPlaying(true);snd.classList.add('chiama');});
+      if(pr&&pr.then)pr.then(function(){setPlaying(true);},function(){setAudio(false);setPlaying(true);inv.hidden=false;});
       else setPlaying(true);}
     if(trk.readyState>=4)start();else{trk.addEventListener('canplaythrough',start);trk.addEventListener('error',start);setTimeout(start,5000);}
   }
