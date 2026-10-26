@@ -163,6 +163,8 @@ main section[id]{scroll-margin-top:6.5rem}
 .cap span{opacity:0;transition:opacity .25s}
 .cap span.on{opacity:1}
 .cap span.now{text-decoration:underline;text-decoration-color:var(--oro);text-decoration-thickness:.13em;text-underline-offset:.22em}
+/* con la voce accesa la frase compare intera: le parole una alla volta non sarebbero a tempo con la voce */
+.stage.voce .cap span{opacity:1;text-decoration:none;transition:none}
 .scene .cen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(1.5*var(--u));text-align:center}
 .big{font-family:var(--f-display);font-weight:800;font-size:calc(6.8*var(--u));line-height:.95;letter-spacing:-.02em;text-transform:uppercase;color:var(--ink);margin:0}
 .big .oro{color:var(--oro-txt)} .big .az{color:var(--azzurro)} .big .ro{color:var(--rosso)}
@@ -618,6 +620,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
       noiseBuf=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);var d=noiseBuf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
     if(on&&AC&&AC.state==='suspended')AC.resume();
     audioOn=on&&!!AC;
+    stage.classList.toggle('voce',audioOn);
     if(audioOn){try{trk.currentTime=(SS[cur]+t)/1000;}catch(e){}if(playing){var pr=trk.play();if(pr&&pr.catch)pr.catch(function(){});}}else trk.pause();
     var b=document.getElementById('snd');b.textContent=audioOn?'Muto':'Audio';b.setAttribute('aria-pressed',audioOn?'true':'false');
   }
