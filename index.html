@@ -759,7 +759,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
   ];
 
   // tempi misurati sulla voce di Suno (audio/aiutato.mp3): inizio di ogni scena, inizio di ogni frase, fine della voce
-  var VS=[1000,8200,19200,28300,37100,48700,59400,67900],VEND=96500,END=106000,
+  var VS=[1000,8200,19200,28300,37100,48700,59400,67900],VEND=76500,END=82000,
       SS=VS.map(function(v,i){return i?v-300:0;});
   S.forEach(function(s,i){s.d0=s.dur;s.dur=(i<S.length-1?SS[i+1]:END)-SS[i];});
   var trk=new Audio('audio/aiutato.mp3'),trkErr=false;trk.preload='auto';
@@ -797,7 +797,10 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
   function frame(now){
     var dt=Math.min(now-last,100);last=now;
     if(playing){
-      if(audioOn&&!trkErr&&(trk.paused||trk.readyState<2)){
+      if(audioOn&&!trkErr&&(trk.ended||trk.currentTime*1000>=END-50)){
+        // fine del brano: l'animazione si ferma sull'ultima scena
+        trk.pause();finishScene();ended=true;setPlaying(false);
+      }else if(audioOn&&!trkErr&&(trk.paused||trk.readyState<2)){
         // il brano sta ancora caricando: l'animazione aspetta la voce
       }else if(audioOn&&!trkErr){
         // la voce comanda: scena e tempo seguono il brano
